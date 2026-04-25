@@ -1,0 +1,33 @@
+{
+  "timeoutMs": 2500,
+  "latencyWarningMs": 900,
+  "services": [
+    {
+      "name": "github-api",
+      "type": "http",
+      "url": "https://api.github.com",
+      "critical": true
+    },
+    {
+      "name": "github-status",
+      "type": "http",
+      "url": "https://www.githubstatus.com/api/v2/status.json",
+      "critical": false,
+      "dependsOn": ["github-api"]
+    },
+    {
+      "name": "public-tls",
+      "type": "tcp",
+      "host": "github.com",
+      "port": 443,
+      "critical": false
+    },
+    {
+      "name": "demo-db-down",
+      "type": "tcp",
+      "host": "127.0.0.1",
+      "port": 65432,
+      "critical": true
+    }
+  ]
+}

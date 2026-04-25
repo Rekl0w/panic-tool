@@ -1,0 +1,34 @@
+{
+  "timeoutMs": 2000,
+  "latencyWarningMs": 750,
+  "services": [
+    {
+      "name": "api",
+      "type": "http",
+      "url": "https://api.example.com/health",
+      "critical": true,
+      "dependsOn": ["db", "redis"]
+    },
+    {
+      "name": "db",
+      "type": "tcp",
+      "host": "localhost",
+      "port": 5432,
+      "critical": true
+    },
+    {
+      "name": "redis",
+      "type": "tcp",
+      "host": "localhost",
+      "port": 6379,
+      "critical": false
+    },
+    {
+      "name": "queue",
+      "type": "http",
+      "url": "https://queue.example.com/health",
+      "critical": false,
+      "dependsOn": ["redis"]
+    }
+  ]
+}
