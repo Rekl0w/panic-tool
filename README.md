@@ -1,7 +1,5 @@
 # Panic Tool
 
-[![npm](https://img.shields.io/npm/v/@rekl0w/panic-tool.svg)](https://www.npmjs.com/package/@rekl0w/panic-tool)
-
 **Panic Tool** is a tiny production incident triage CLI for developers and on-call engineers.
 
 It is **not** a dashboard, observability platform, log collector, alerting system, or Sentry clone. It is intentionally focused on one operational question:
