@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows semantic versioning from `v0.1.0` onward.
 
+## 0.2.1 - 2026-04-26
+
+Documentation cleanup release.
+
 ## 0.2.0 - 2026-04-26
 
 Dual-mode incident response release.

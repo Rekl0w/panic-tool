@@ -58,7 +58,7 @@ PANIC MODE is intentionally minimal, decisive, and authoritative. It does not in
 
 ## Install
 
-Panic Tool is published on npm as `@rekl0w/panic-tool`.
+Install Panic Tool from npm as `@rekl0w/panic-tool`.
 
 > Runtime requirement: Bun 1.3.11+ must be installed because the CLI binary runs on the Bun runtime.
 
@@ -405,7 +405,7 @@ panic-tool/
 │   ├── index.ts        # public exports
 │   ├── server.ts       # Hono backend
 │   └── types.ts        # shared TypeScript types
-├── scripts/build.ts    # npm package build script
+├── scripts/build.ts    # package build script
 ├── panic.config.example.json
 ├── panic.demo.config.json
 ├── package.json
@@ -440,31 +440,6 @@ bun run src/cli.ts check --full --config ./panic.demo.config.json
 bun run src/cli.ts emergency --config ./panic.demo.config.json
 ```
 
-Preview the npm package contents before publishing:
-
-```bash
-npm pack --dry-run
-```
-
-Publish checklist:
-
-```bash
-npm login
-npm whoami
-npm pkg fix
-bun run typecheck
-bun run build
-npm publish --access public
-```
-
-If publishing `@rekl0w/panic-tool` returns `E404`, check that the logged-in npm account owns the `@rekl0w` scope. For scoped packages, npm scopes are tied to npm users or npm organizations, not GitHub users automatically.
-
-Publish after login and scope verification:
-
-```bash
-npm publish --access public
-```
-
 ## Design principles
 
 - CLI-first
@@ -496,7 +471,7 @@ npm publish --access public
 
 See [`CHANGELOG.md`](./CHANGELOG.md) for version history.
 
-Latest release: [`v0.2.0`](./CHANGELOG.md#020---2026-04-26)
+Latest release: [`v0.2.1`](./CHANGELOG.md#021---2026-04-26)
 
 ## Contributing
 
