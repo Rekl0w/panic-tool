@@ -333,7 +333,20 @@ Preview the npm package contents before publishing:
 npm pack --dry-run
 ```
 
-Publish:
+Publish checklist:
+
+```bash
+npm login
+npm whoami
+npm pkg fix
+bun run typecheck
+bun run build
+npm publish --access public
+```
+
+If publishing `@rekl0w/panic-tool` returns `E404`, check that the logged-in npm account owns the `@rekl0w` scope. For scoped packages, npm scopes are tied to npm users or npm organizations, not GitHub users automatically.
+
+Publish after login and scope verification:
 
 ```bash
 npm publish --access public
