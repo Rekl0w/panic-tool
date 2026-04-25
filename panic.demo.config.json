@@ -6,28 +6,33 @@
       "name": "github-api",
       "type": "http",
       "url": "https://api.github.com",
-      "critical": true
+      "critical": true,
+      "dependsOn": ["demo-db-down"],
+      "logSummary": "Demo endpoint is public GitHub API; no application logs available."
     },
     {
       "name": "github-status",
       "type": "http",
       "url": "https://www.githubstatus.com/api/v2/status.json",
       "critical": false,
-      "dependsOn": ["github-api"]
+      "dependsOn": ["github-api"],
+      "logSummary": "Public status endpoint used as demo dependency."
     },
     {
       "name": "public-tls",
       "type": "tcp",
       "host": "github.com",
       "port": 443,
-      "critical": false
+      "critical": false,
+      "logSummary": "TCP connectivity demo target."
     },
     {
       "name": "demo-db-down",
       "type": "tcp",
       "host": "127.0.0.1",
       "port": 65432,
-      "critical": true
+      "critical": true,
+      "logSummary": "Intentional failure: nothing should listen on this demo port."
     }
   ]
 }

@@ -173,7 +173,7 @@ function result(
   target: string,
   message: string,
 ): HealthCheckResult {
-  return {
+  const checkResult: HealthCheckResult = {
     service: service.name,
     type: service.type,
     status,
@@ -184,4 +184,10 @@ function result(
     message,
     dependsOn: service.dependsOn ?? [],
   };
+
+  if (service.logSummary) {
+    checkResult.logSummary = service.logSummary;
+  }
+
+  return checkResult;
 }

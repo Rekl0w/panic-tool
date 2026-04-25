@@ -7,28 +7,32 @@
       "type": "http",
       "url": "https://api.example.com/health",
       "critical": true,
-      "dependsOn": ["db", "redis"]
+      "dependsOn": ["db", "redis"],
+      "logSummary": "Recent errors show upstream dependency timeouts."
     },
     {
       "name": "db",
       "type": "tcp",
       "host": "localhost",
       "port": 5432,
-      "critical": true
+      "critical": true,
+      "logSummary": "Connection pool near limit; recent timeout spikes."
     },
     {
       "name": "redis",
       "type": "tcp",
       "host": "localhost",
       "port": 6379,
-      "critical": false
+      "critical": false,
+      "logSummary": "Eviction count normal; memory pressure unknown."
     },
     {
       "name": "queue",
       "type": "http",
       "url": "https://queue.example.com/health",
       "critical": false,
-      "dependsOn": ["redis"]
+      "dependsOn": ["redis", "db"],
+      "logSummary": "Worker retries increased in the last deploy window."
     }
   ]
 }

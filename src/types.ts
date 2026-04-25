@@ -10,6 +10,7 @@ export interface ServiceConfig {
   port?: number;
   critical?: boolean;
   dependsOn?: string[];
+  logSummary?: string;
   timeoutMs?: number;
   expectedStatus?: number[];
 }
@@ -30,6 +31,20 @@ export interface HealthCheckResult {
   target: string;
   message: string;
   dependsOn: string[];
+  logSummary?: string;
+}
+
+export interface RootCauseDecision {
+  cause: string;
+  explanation: string;
+  rule: string;
+}
+
+export interface EmergencyDecision {
+  what: string;
+  rootCause: RootCauseDecision;
+  impact: string;
+  nextAction: string;
 }
 
 export interface IncidentSummary {
@@ -39,6 +54,9 @@ export interface IncidentSummary {
   healthy: HealthCheckResult[];
   rootCauses: string[];
   suggestions: string[];
+  mostLikelyRootCause: RootCauseDecision;
+  nextAction: string;
+  impact: string;
   narrative: string;
   checkedAt: string;
 }

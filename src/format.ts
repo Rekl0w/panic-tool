@@ -1,4 +1,8 @@
-import type { HealthCheckResult, IncidentSummary } from "./types";
+import type {
+  EmergencyDecision,
+  HealthCheckResult,
+  IncidentSummary,
+} from "./types";
 
 const STATUS_ICON = {
   healthy: "✅",
@@ -16,6 +20,36 @@ export function formatHealthReport(results: HealthCheckResult[]): string {
   ];
 
   return lines.join("\n");
+}
+
+export function formatFullHealthReport(
+  results: HealthCheckResult[],
+  summary: IncidentSummary,
+): string {
+  return [
+    "Panic Tool — Full System Check",
+    "==============================",
+    "",
+    `Overall: ${normalizeStatus(summary.overallStatus)}`,
+    `Checked: ${summary.checkedAt}`,
+    "",
+    "Services:",
+    ...results.map(formatFullResultLine),
+    "",
+    "Dependencies:",
+    ...formatDependencyLines(results),
+    "",
+    "Log summaries:",
+    ...formatLogSummaries(results),
+    "",
+    "Rule engine:",
+    `  Rule       : ${summary.mostLikelyRootCause.rule}`,
+    `  Cause      : ${summary.mostLikelyRootCause.cause}`,
+    `  Explanation: ${summary.mostLikelyRootCause.explanation}`,
+    "",
+    "Suggested next action:",
+    `  ${summary.nextAction}`,
+  ].join("\n");
 }
 
 export function formatStatus(results: HealthCheckResult[]): string {
@@ -66,9 +100,66 @@ export function formatIncident(summary: IncidentSummary): string {
   ].join("\n");
 }
 
+export function formatEmergency(decision: EmergencyDecision): string {
+  return [
+    `WHAT: ${decision.what}`,
+    `ROOT CAUSE: ${decision.rootCause.cause} ${decision.rootCause.explanation}`,
+    `IMPACT: ${decision.impact}`,
+    `NEXT ACTION: ${decision.nextAction}`,
+  ].join("\n");
+}
+
 function formatResultLine(result: HealthCheckResult): string {
   const critical = result.critical ? " critical" : "";
   return `${STATUS_ICON[result.status]} ${result.service.padEnd(12)} ${result.status.padEnd(8)} ${String(result.latencyMs).padStart(5)}ms ${result.target}${critical} — ${result.message}`;
+}
+
+function formatFullResultLine(result: HealthCheckResult): string {
+  const critical = result.critical ? "yes" : "no";
+  return `  - ${result.service}\n    status     : ${normalizeStatus(result.status)}\n    type       : ${result.type}\n    target     : ${result.target}\n    latency    : ${result.latencyMs}ms\n    critical   : ${critical}\n    message    : ${result.message}`;
+}
+
+function formatDependencyLines(results: HealthCheckResult[]): string[] {
+  const byName = new Map(
+    results.map((result) => [result.service.toLowerCase(), result]),
+  );
+
+  const lines = results.flatMap((result) => {
+    if (result.dependsOn.length === 0) {
+      return [`  - ${result.service}: none`];
+    }
+
+    const dependencies = result.dependsOn.map((dependencyName) => {
+      const dependency = byName.get(dependencyName.toLowerCase());
+      return dependency
+        ? `${dependency.service}=${normalizeStatus(dependency.status)}`
+        : `${dependencyName}=UNKNOWN`;
+    });
+
+    return [`  - ${result.service}: ${dependencies.join(", ")}`];
+  });
+
+  return lines.length > 0 ? lines : ["  - none"];
+}
+
+function formatLogSummaries(results: HealthCheckResult[]): string[] {
+  const summaries = results.filter((result) => result.logSummary);
+
+  if (summaries.length === 0) {
+    return ["  - none configured"];
+  }
+
+  return summaries.map(
+    (result) => `  - ${result.service}: ${result.logSummary ?? "none"}`,
+  );
+}
+
+function normalizeStatus(status: HealthCheckResult["status"]): string {
+  if (status === "healthy") {
+    return "OK";
+  }
+
+  return status.toUpperCase();
 }
 
 function formatGroup(results: HealthCheckResult[]): string[] {

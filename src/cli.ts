@@ -5,17 +5,31 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadConfig } from "./config";
 import { runHealthChecks } from "./checkers";
-import { generateIncidentSummary } from "./incident";
-import { formatHealthReport, formatIncident, formatStatus } from "./format";
+import { generateEmergencyDecision, generateIncidentSummary } from "./incident";
+import {
+  formatEmergency,
+  formatFullHealthReport,
+  formatHealthReport,
+  formatIncident,
+  formatStatus,
+} from "./format";
 
-const VALID_COMMANDS = new Set(["check", "status", "incident", "init", "help"]);
+const VALID_COMMANDS = new Set([
+  "check",
+  "status",
+  "incident",
+  "emergency",
+  "init",
+  "help",
+]);
 
-type Command = "check" | "status" | "incident" | "init" | "help";
+type Command = "check" | "status" | "incident" | "emergency" | "init" | "help";
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const command = (args[0] ?? "help") as Command;
   const configPath = readFlag(args, "--config") ?? readFlag(args, "-c");
+  const fullMode = args.includes("--full");
 
   if (!VALID_COMMANDS.has(command)) {
     printHelp();
@@ -37,6 +51,13 @@ async function main(): Promise<void> {
   const results = await runHealthChecks(config);
 
   if (command === "check") {
+    if (fullMode) {
+      const summary = generateIncidentSummary(results);
+      console.log(formatFullHealthReport(results, summary));
+      setExitCode(results);
+      return;
+    }
+
     console.log(formatHealthReport(results));
     setExitCode(results);
     return;
@@ -44,6 +65,13 @@ async function main(): Promise<void> {
 
   if (command === "status") {
     console.log(formatStatus(results));
+    setExitCode(results);
+    return;
+  }
+
+  if (command === "emergency") {
+    const decision = generateEmergencyDecision(results);
+    console.log(formatEmergency(decision));
     setExitCode(results);
     return;
   }
@@ -88,7 +116,7 @@ async function initConfig(): Promise<void> {
 
 function printHelp(): void {
   console.log(
-    `Panic Tool — production incident triage\n\nUsage:\n  panic check              Run all configured health checks\n  panic status             Show a compact status summary\n  panic incident           Generate triage summary + root-cause hints\n  panic init               Create panic.config.json from example\n\nOptions:\n  -c, --config <path>      Use a custom config file\n\nExamples:\n  panic check\n  panic status --config ./prod.panic.json\n  panic incident`,
+    `Panic Tool — production incident triage\n\nUsage:\n  panic check              Run concise health checks\n  panic check --full       Full mode: detailed system visibility\n  panic status             Show a compact status summary\n  panic emergency          Panic mode: 4-line decisive incident output\n  panic incident           Detailed triage summary + root-cause hints\n  panic init               Create panic.config.json from example\n\nOptions:\n  -c, --config <path>      Use a custom config file\n  --full                  Use full engineering/debug output with panic check\n\nExamples:\n  panic check --full\n  panic emergency --config ./prod.panic.json\n  panic status`,
   );
 }
 

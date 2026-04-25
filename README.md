@@ -1,6 +1,6 @@
 # Panic Tool
 
-**Panic Tool** is a tiny production incident triage CLI for developers and on-call engineers.
+**Panic Tool** is a tiny dual-mode production incident response CLI for developers and on-call engineers.
 
 It is **not** a dashboard, observability platform, log collector, alerting system, or Sentry clone. It is intentionally focused on one operational question:
 
@@ -11,6 +11,8 @@ Built with **Bun + Hono**.
 ## Features
 
 - CLI-first incident triage
+- FULL MODE for engineering/debug visibility with `panic check --full`
+- PANIC MODE for 4-line outage decisions with `panic emergency`
 - HTTP health checks
 - TCP health checks for DB, Redis, queues, brokers, and internal services
 - Unified service health report
@@ -18,6 +20,41 @@ Built with **Bun + Hono**.
 - Simple rule-based probable root cause heuristics
 - Actionable recovery suggestions
 - Optional lightweight Hono JSON API
+
+## Dual-mode design
+
+Panic Tool intentionally separates understanding from action.
+
+### FULL MODE: understand the system
+
+Triggered by:
+
+```bash
+panic check --full
+```
+
+Use FULL MODE when you need engineering/debug visibility. It includes service status, latency, dependency status, optional log summaries from config, matched rule, explanation, and suggested next action.
+
+FULL MODE is informative, structured, and calm. It does not force a decision.
+
+### PANIC MODE: fix the system now
+
+Triggered by:
+
+```bash
+panic emergency
+```
+
+Use PANIC MODE during an active outage. It always prints exactly four decision lines:
+
+```text
+WHAT: ...
+ROOT CAUSE: ...
+IMPACT: ...
+NEXT ACTION: ...
+```
+
+PANIC MODE is intentionally minimal, decisive, and authoritative. It does not include extra debugging detail.
 
 ## Install
 
@@ -71,7 +108,9 @@ Edit `panic.config.json` with your services, then run:
 
 ```bash
 panic check
+panic check --full
 panic status
+panic emergency
 panic incident
 ```
 
@@ -79,7 +118,7 @@ Prefer one-shot usage instead of global install? Use either runner:
 
 ```bash
 npx @rekl0w/panic-tool@latest incident --config ./panic.demo.config.json
-bunx @rekl0w/panic-tool@latest incident --config ./panic.demo.config.json
+bunx @rekl0w/panic-tool@latest emergency --config ./panic.demo.config.json
 ```
 
 Use a custom config file:
@@ -94,6 +133,8 @@ This repo includes `panic.demo.config.json`, which uses public GitHub endpoints 
 
 ```bash
 panic check --config ./panic.demo.config.json
+panic check --full --config ./panic.demo.config.json
+panic emergency --config ./panic.demo.config.json
 panic incident --config ./panic.demo.config.json
 ```
 
@@ -101,7 +142,7 @@ Without global install:
 
 ```bash
 npx @rekl0w/panic-tool@latest check --config ./panic.demo.config.json
-bunx @rekl0w/panic-tool@latest incident --config ./panic.demo.config.json
+bunx @rekl0w/panic-tool@latest emergency --config ./panic.demo.config.json
 ```
 
 Useful public targets for manual testing:
@@ -125,21 +166,24 @@ If you want an open-source app to test against, use any repo/service that expose
       "type": "http",
       "url": "https://api.example.com/health",
       "critical": true,
-      "dependsOn": ["db", "redis"]
+      "dependsOn": ["db", "redis"],
+      "logSummary": "Recent errors show upstream dependency timeouts."
     },
     {
       "name": "db",
       "type": "tcp",
       "host": "localhost",
       "port": 5432,
-      "critical": true
+      "critical": true,
+      "logSummary": "Connection pool near limit; recent timeout spikes."
     },
     {
       "name": "redis",
       "type": "tcp",
       "host": "localhost",
       "port": 6379,
-      "critical": false
+      "critical": false,
+      "logSummary": "Eviction count normal; memory pressure unknown."
     }
   ]
 }
@@ -167,6 +211,56 @@ Panic Tool — Health Check
 ✅ queue        healthy      96ms https://queue.example.com/health — HTTP health check passed
 ```
 
+### `panic check --full`
+
+Runs FULL MODE for engineering/debug visibility.
+
+```bash
+panic check --full
+```
+
+Example:
+
+```text
+Panic Tool — Full System Check
+==============================
+
+Overall: DOWN
+Checked: 2026-04-26T10:12:00.000Z
+
+Services:
+  - api
+    status     : DOWN
+    type       : http
+    target     : https://api.example.com/health
+    latency    : 1800ms
+    critical   : yes
+    message    : HTTP 503
+  - db
+    status     : DOWN
+    type       : tcp
+    target     : localhost:5432
+    latency    : 2001ms
+    critical   : yes
+    message    : TCP timeout after 2000ms
+
+Dependencies:
+  - api: db=DOWN, redis=OK
+  - db: none
+
+Log summaries:
+  - api: Recent errors show upstream dependency timeouts.
+  - db: Connection pool near limit; recent timeout spikes.
+
+Rule engine:
+  Rule       : DB_DOWN_API_DOWN
+  Cause      : Database failure is causing API failure.
+  Explanation: Rule DB_DOWN_API_DOWN matched: database is DOWN while API is DOWN.
+
+Suggested next action:
+  Check database availability and connection pool before restarting the API.
+```
+
 ### `panic status`
 
 Shows a compact operational status summary.
@@ -187,6 +281,23 @@ Healthy : 2
 
 Critical failures:
   - db: TCP timeout after 2000ms (2001ms)
+```
+
+### `panic emergency`
+
+Runs PANIC MODE for an active incident. The output is intentionally limited to four lines.
+
+```bash
+panic emergency
+```
+
+Example:
+
+```text
+WHAT: api, db is DOWN.
+ROOT CAUSE: Database failure is causing API failure. Rule DB_DOWN_API_DOWN matched: database is DOWN while API is DOWN.
+IMPACT: Critical outage affecting api, db.
+NEXT ACTION: Check database availability and connection pool before restarting the API.
 ```
 
 ### `panic incident`
@@ -245,6 +356,7 @@ Endpoints:
 - `GET /health` — raw check results
 - `GET /status` — compact status JSON
 - `GET /incident` — summary, root-cause hints, and suggestions
+- `GET /emergency` — panic-mode decision object
 
 Default port is `3030`. Override it with `PORT`.
 
@@ -255,7 +367,8 @@ Default port is `3030`. Override it with `PORT`.
 | panic CLI          |        | Hono lightweight backend |
 |                    |        |                         |
 | panic check        |        | GET /health             |
-| panic status       |        | GET /status             |
+| panic check --full |        | GET /status             |
+| panic emergency    |        | GET /emergency          |
 | panic incident     |        | GET /incident           |
 +---------+----------+        +------------+------------+
           |                                |
@@ -271,10 +384,11 @@ Default port is `3030`. Override it with `PORT`.
                           |
                           v
               +-----------------------+
-              | Incident engine       |
-              | - failing/degraded/ok |
-              | - rule heuristics     |
-              | - action suggestions  |
+              | Dual-mode engine      |
+              | - FULL MODE details   |
+              | - PANIC MODE decision |
+              | - deterministic rules |
+              | - next action         |
               +-----------------------+
 ```
 
@@ -322,7 +436,8 @@ bun run build
 Run CLI from source:
 
 ```bash
-bun run src/cli.ts incident --config ./panic.demo.config.json
+bun run src/cli.ts check --full --config ./panic.demo.config.json
+bun run src/cli.ts emergency --config ./panic.demo.config.json
 ```
 
 Preview the npm package contents before publishing:
@@ -353,6 +468,7 @@ npm publish --access public
 ## Design principles
 
 - CLI-first
+- Keep FULL MODE and PANIC MODE separate
 - Small architecture, no microservices
 - Rule-based heuristics, no heavy ML
 - Fast triage over historical forensics
@@ -374,12 +490,13 @@ npm publish --access public
 - Docker image
 - GitHub Actions release workflow
 - Pluggable checks for Kubernetes, systemd, and cloud load balancers
+- Configurable custom rule packs
 
 ## Release notes
 
 See [`CHANGELOG.md`](./CHANGELOG.md) for version history.
 
-Latest release: [`v0.1.0`](./CHANGELOG.md#010---2026-04-26)
+Latest release: [`v0.2.0`](./CHANGELOG.md#020---2026-04-26)
 
 ## Contributing
 

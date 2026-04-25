@@ -1,6 +1,6 @@
 {
   "name": "@rekl0w/panic-tool",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A minimal production incident triage CLI and lightweight backend for fast health checks, summaries, root-cause heuristics, and recovery suggestions.",
   "type": "module",
   "packageManager": "bun@1.3.11",
@@ -32,6 +32,7 @@
     "start": "bun run src/server.ts",
     "check": "bun run src/cli.ts check",
     "status": "bun run src/cli.ts status",
+    "emergency": "bun run src/cli.ts emergency",
     "incident": "bun run src/cli.ts incident",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "bun run typecheck && bun run build"
