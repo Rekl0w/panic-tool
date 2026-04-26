@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows semantic versioning from `v0.1.0` onward.
 
+## 0.3.0 - 2026-04-26
+
+Root-cause evidence release.
+
+### 0.3.0 Added
+
+- Root cause decisions now include deterministic confidence levels: `high`, `medium`, or `low`.
+- Root cause decisions now include evidence strings assembled from health status, latency, target, criticality, messages, and dependency relationships.
+- FULL MODE now prints confidence and evidence under the rule engine section.
+- PANIC MODE keeps the strict four-line output while adding confidence inline on the `ROOT CAUSE` line.
+- Roadmap now includes signal adapters for Datadog, CloudWatch, git history, and DB state.
+
+### 0.3.0 Notes
+
+- This keeps the engine rule-based and lightweight while making root-cause output more trustworthy.
+- External signal ingestion is intentionally roadmap-only for now; the implemented change focuses on evidence from existing health/dependency data.
+
 ## 0.2.1 - 2026-04-26
 
 Documentation cleanup release.

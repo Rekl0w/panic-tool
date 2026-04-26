@@ -44,8 +44,12 @@ export function formatFullHealthReport(
     "",
     "Rule engine:",
     `  Rule       : ${summary.mostLikelyRootCause.rule}`,
+    `  Confidence : ${summary.mostLikelyRootCause.confidence.toUpperCase()}`,
     `  Cause      : ${summary.mostLikelyRootCause.cause}`,
     `  Explanation: ${summary.mostLikelyRootCause.explanation}`,
+    "",
+    "Evidence:",
+    ...formatEvidence(summary.mostLikelyRootCause.evidence),
     "",
     "Suggested next action:",
     `  ${summary.nextAction}`,
@@ -103,10 +107,18 @@ export function formatIncident(summary: IncidentSummary): string {
 export function formatEmergency(decision: EmergencyDecision): string {
   return [
     `WHAT: ${decision.what}`,
-    `ROOT CAUSE: ${decision.rootCause.cause} ${decision.rootCause.explanation}`,
+    `ROOT CAUSE: [${decision.rootCause.confidence.toUpperCase()}] ${decision.rootCause.cause} ${decision.rootCause.explanation}`,
     `IMPACT: ${decision.impact}`,
     `NEXT ACTION: ${decision.nextAction}`,
   ].join("\n");
+}
+
+function formatEvidence(evidence: string[]): string[] {
+  if (evidence.length === 0) {
+    return ["  - none"];
+  }
+
+  return evidence.map((item) => `  - ${item}`);
 }
 
 function formatResultLine(result: HealthCheckResult): string {

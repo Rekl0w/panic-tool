@@ -38,6 +38,8 @@ export interface RootCauseDecision {
   cause: string;
   explanation: string;
   rule: string;
+  confidence: "high" | "medium" | "low";
+  evidence: string[];
 }
 
 export interface EmergencyDecision {

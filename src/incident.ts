@@ -169,6 +169,12 @@ function decideRootCause(results: HealthCheckResult[]): RootCauseDecision {
       explanation:
         "Rule DB_DOWN_API_DOWN matched: database is DOWN while API is DOWN.",
       rule: "DB_DOWN_API_DOWN",
+      confidence: "high",
+      evidence: [
+        serviceEvidence(db),
+        serviceEvidence(api),
+        dependencyEvidence(api, db),
+      ],
     };
   }
 
@@ -178,6 +184,12 @@ function decideRootCause(results: HealthCheckResult[]): RootCauseDecision {
       explanation:
         "Rule DB_SLOW_API_IMPACT matched: database is DEGRADED while API is unhealthy.",
       rule: "DB_SLOW_API_IMPACT",
+      confidence: "high",
+      evidence: [
+        serviceEvidence(db),
+        serviceEvidence(api),
+        dependencyEvidence(api, db),
+      ],
     };
   }
 
@@ -186,6 +198,8 @@ function decideRootCause(results: HealthCheckResult[]): RootCauseDecision {
       cause: "Queue workers are unavailable or stuck.",
       explanation: "Rule QUEUE_DOWN matched: queue/worker service is DOWN.",
       rule: "QUEUE_DOWN",
+      confidence: "medium",
+      evidence: [serviceEvidence(queue)],
     };
   }
 
@@ -195,6 +209,12 @@ function decideRootCause(results: HealthCheckResult[]): RootCauseDecision {
       explanation:
         "Rule QUEUE_BACKLOG_DB_BOTTLENECK matched: queue is DEGRADED and database is unhealthy.",
       rule: "QUEUE_BACKLOG_DB_BOTTLENECK",
+      confidence: "high",
+      evidence: [
+        serviceEvidence(queue),
+        serviceEvidence(db),
+        dependencyEvidence(queue, db),
+      ],
     };
   }
 
@@ -209,6 +229,12 @@ function decideRootCause(results: HealthCheckResult[]): RootCauseDecision {
       explanation:
         "Rule REDIS_QUEUE_IMPACT matched: Redis and queue are both unhealthy.",
       rule: "REDIS_QUEUE_IMPACT",
+      confidence: "high",
+      evidence: [
+        serviceEvidence(redis),
+        serviceEvidence(queue),
+        dependencyEvidence(queue, redis),
+      ],
     };
   }
 
@@ -221,6 +247,8 @@ function decideRootCause(results: HealthCheckResult[]): RootCauseDecision {
       explanation:
         "Rule CRITICAL_SERVICE_DOWN matched: a critical service is DOWN.",
       rule: "CRITICAL_SERVICE_DOWN",
+      confidence: "medium",
+      evidence: [serviceEvidence(criticalDown)],
     };
   }
 
@@ -231,6 +259,8 @@ function decideRootCause(results: HealthCheckResult[]): RootCauseDecision {
       explanation:
         "Rule SERVICE_DEGRADED matched: at least one service is DEGRADED.",
       rule: "SERVICE_DEGRADED",
+      confidence: "low",
+      evidence: [serviceEvidence(slowService)],
     };
   }
 
@@ -240,6 +270,8 @@ function decideRootCause(results: HealthCheckResult[]): RootCauseDecision {
       cause: `${downService.service} is down.`,
       explanation: "Rule SERVICE_DOWN matched: at least one service is DOWN.",
       rule: "SERVICE_DOWN",
+      confidence: "low",
+      evidence: [serviceEvidence(downService)],
     };
   }
 
@@ -248,7 +280,24 @@ function decideRootCause(results: HealthCheckResult[]): RootCauseDecision {
     explanation:
       "Rule ALL_SERVICES_OK matched: all configured checks are healthy.",
     rule: "ALL_SERVICES_OK",
+    confidence: "high",
+    evidence: results.map(serviceEvidence),
   };
+}
+
+function serviceEvidence(result: HealthCheckResult): string {
+  const critical = result.critical ? "critical" : "non-critical";
+  return `${result.service}=${result.status.toUpperCase()} latency=${result.latencyMs}ms target=${result.target} ${critical} message="${result.message}"`;
+}
+
+function dependencyEvidence(
+  service: HealthCheckResult,
+  dependency: HealthCheckResult,
+): string {
+  const relation = service.dependsOn.includes(dependency.service)
+    ? "declared dependency"
+    : "name-based dependency signal";
+  return `${service.service} -> ${dependency.service}: ${relation}`;
 }
 
 function decideNextAction(

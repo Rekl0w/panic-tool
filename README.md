@@ -17,7 +17,7 @@ Built with **Bun + Hono**.
 - TCP health checks for DB, Redis, queues, brokers, and internal services
 - Unified service health report
 - Human-readable incident summaries
-- Simple rule-based probable root cause heuristics
+- Simple rule-based probable root cause heuristics with confidence and evidence
 - Actionable recovery suggestions
 - Optional lightweight Hono JSON API
 
@@ -33,7 +33,7 @@ Triggered by:
 panic check --full
 ```
 
-Use FULL MODE when you need engineering/debug visibility. It includes service status, latency, dependency status, optional log summaries from config, matched rule, explanation, and suggested next action.
+Use FULL MODE when you need engineering/debug visibility. It includes service status, latency, dependency status, optional log summaries from config, matched rule, confidence, evidence, explanation, and suggested next action.
 
 FULL MODE is informative, structured, and calm. It does not force a decision.
 
@@ -254,8 +254,14 @@ Log summaries:
 
 Rule engine:
   Rule       : DB_DOWN_API_DOWN
+  Confidence : HIGH
   Cause      : Database failure is causing API failure.
   Explanation: Rule DB_DOWN_API_DOWN matched: database is DOWN while API is DOWN.
+
+Evidence:
+  - db=DOWN latency=2001ms target=localhost:5432 critical message="TCP timeout after 2000ms"
+  - api=DOWN latency=1800ms target=https://api.example.com/health critical message="HTTP 503"
+  - api -> db: declared dependency
 
 Suggested next action:
   Check database availability and connection pool before restarting the API.
@@ -295,7 +301,7 @@ Example:
 
 ```text
 WHAT: api, db is DOWN.
-ROOT CAUSE: Database failure is causing API failure. Rule DB_DOWN_API_DOWN matched: database is DOWN while API is DOWN.
+ROOT CAUSE: [HIGH] Database failure is causing API failure. Rule DB_DOWN_API_DOWN matched: database is DOWN while API is DOWN.
 IMPACT: Critical outage affecting api, db.
 NEXT ACTION: Check database availability and connection pool before restarting the API.
 ```
@@ -446,6 +452,7 @@ bun run src/cli.ts emergency --config ./panic.demo.config.json
 - Keep FULL MODE and PANIC MODE separate
 - Small architecture, no microservices
 - Rule-based heuristics, no heavy ML
+- Root-cause output should include confidence and evidence when detail mode is used
 - Fast triage over historical forensics
 - Suggestions should be operationally useful
 - No dashboard in the MVP
@@ -464,6 +471,7 @@ bun run src/cli.ts emergency --config ./panic.demo.config.json
 - YAML config support
 - Docker image
 - GitHub Actions release workflow
+- Signal adapters for Datadog, CloudWatch, git history, and DB state
 - Pluggable checks for Kubernetes, systemd, and cloud load balancers
 - Configurable custom rule packs
 
@@ -471,7 +479,7 @@ bun run src/cli.ts emergency --config ./panic.demo.config.json
 
 See [`CHANGELOG.md`](./CHANGELOG.md) for version history.
 
-Latest release: [`v0.2.1`](./CHANGELOG.md#021---2026-04-26)
+Latest release: [`v0.3.0`](./CHANGELOG.md#030---2026-04-26)
 
 ## Contributing
 
